@@ -7,7 +7,10 @@ from tortoise.expressions import Q
 
 from .http import HTTPClient
 from .models import EmployeeModel, ScheduleSubjectModel
-from ScheduleOGU import bot_config, tortoise_config, ScheduleTime, DayType
+from .enums import DayType
+
+from ..config import bot_config, tortoise_config
+from ..utils import ScheduleTime
 
 _log = logging.getLogger()
 

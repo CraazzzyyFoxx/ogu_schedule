@@ -1,13 +1,13 @@
 import math
 from datetime import datetime
 
+from tabulate import tabulate
+
 from ..core.enums import DayType
-from .http import *
 
 __all__ = ("days_ru",
            "ScheduleTime",
-           "flatten_error_dict",
-           "json_or_text")
+           "print_schedule")
 
 
 days_ru = {DayType.Monday: "Понедельник",
@@ -43,3 +43,16 @@ class ScheduleTime:
         else:
             raw = cls.start_semester + cls.step * (cls.compute_week() - 1)
         return raw
+
+    @classmethod
+    def compute_day(cls, week: int, day: DayType):
+        timestamp = cls.compute_timestamp(week)
+        return datetime.fromtimestamp(timestamp + (day.value - 1) * 86400).strftime("%d.%m.%Y")
+
+
+def print_schedule(schedule, day: DayType, week: int = ScheduleTime.compute_week()):
+    header = days_ru[day] + f" ({ScheduleTime.compute_day(week, day)})"
+    if not schedule.get(day):
+        return tabulate([["Спи спокойно, \n в этот день нет пар"]], headers=[header], tablefmt="simple")
+    rows = [[subject] for subject in schedule[day]]
+    return tabulate(rows, headers=[header], tablefmt="simple")
