@@ -132,4 +132,12 @@ class ScheduleSubjectModel(Model):
             x = -x
             name = name[::-1]
             name = name[0:x] + '\n' + name[x:]
-        return f"{name}\n({self.type})\n🕐{times[self.number]}\n{self.employee.url}\n{self.building}-{self.audience}"
+
+        name = f"{name}\n({self.type})\n🕐{times[self.number]}\n{self.employee.url}\n{self.building}-{self.audience}"
+        if self.zoom_link is not None and self.zoom_link != " ":
+            name += f"\n<a href='{self.zoom_link}'>Конференция</a>"
+
+        if self.zoom_password is not None and self.zoom_password != " ":
+            name += f"\n<b>Пароль:</b> {self.zoom_password}"
+
+        return name

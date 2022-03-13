@@ -1,6 +1,5 @@
 import logging
 import typing as t
-from pprint import pprint
 
 from aiogram import Bot
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -56,7 +55,7 @@ class Client(Bot):
         schedule = await self.http.get_schedule(group_id, week)
 
         for day in schedule.days.values():
-            await ScheduleDayModel.filter(date=day.date).delete()
+            await ScheduleDayModel.filter(date=day.date, group_id=group_id).delete()
             day_ = await ScheduleDayModel.create(date=day.date,
                                                  day=day.day,
                                                  group_id=group_id)
@@ -64,8 +63,7 @@ class Client(Bot):
             subjects_ = []
             for subject in day.subjects:
                 (await EmployeeModel
-                 .update_or_create(defaults={"id": subject.employee_id,
-                                             "name": subject.employee_name,
+                 .update_or_create(defaults={"name": subject.employee_name,
                                              "second_name": subject.employee_second_name,
                                              "middle_name": subject.employee_middle_name},
                                    id=subject.employee_id))
@@ -81,7 +79,7 @@ class Client(Bot):
                                                       day_id=day_.id
                                                       ))
 
-            await ScheduleSubjectModel.bulk_create(subjects_)
+            await ScheduleSubjectModel.bulk_create(subjects_, ignore_conflicts=True)
 
         return await self.get_schedule(group_id, week)
 

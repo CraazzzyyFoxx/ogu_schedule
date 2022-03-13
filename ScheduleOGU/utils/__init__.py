@@ -10,7 +10,8 @@ from ..core.enums import DayType, days_ru
 from ..core.models import ScheduleDayModel
 
 __all__ = ("ScheduleTime",
-           "print_schedule")
+           "print_schedule",
+           "format_buttons")
 
 
 class ScheduleTime:
@@ -51,7 +52,7 @@ class print_schedule:
                 for subject in day_.subjects:
                     if number != subject.number:
                         self.str_subjects[number] = "<b>Окно</b>"
-                        number +=1
+                        number += 1
 
                     if self.str_subjects.get(subject.number) is not None:
                         self.str_subjects[subject.number] += "\n <b>Подгруппа 1</b> \n"
@@ -68,3 +69,16 @@ class print_schedule:
         rows = [[subject + "\n\u200b\n"] for subject in self.str_subjects.values()]
         table = tabulate(rows, headers=[self.header], tablefmt="simple")
         return table
+
+
+def format_buttons(buttons, row_width=3):
+    keyboard = []
+    row = []
+    for index, button in enumerate(buttons, start=1):
+        row.append(button)
+        if index % row_width == 0:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+    return keyboard
