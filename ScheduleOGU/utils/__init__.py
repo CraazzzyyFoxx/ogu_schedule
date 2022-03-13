@@ -1,22 +1,16 @@
 import math
+import typing as t
+
 from datetime import datetime
 
+from aiogram.utils.markdown import escape_md
 from tabulate import tabulate
 
-from ..core.enums import DayType
+from ..core.enums import DayType, days_ru
+from ..core.models import ScheduleDayModel
 
-__all__ = ("days_ru",
-           "ScheduleTime",
+__all__ = ("ScheduleTime",
            "print_schedule")
-
-
-days_ru = {DayType.Monday: "Понедельник",
-           DayType.Tuesday: "Вторник",
-           DayType.Wednesday: "Среда",
-           DayType.Thursday: "Четверг",
-           DayType.Friday: "Пятница",
-           DayType.Saturday: "Суббота",
-           }
 
 
 class ScheduleTime:
@@ -30,19 +24,15 @@ class ScheduleTime:
 
     @classmethod
     def compute_timestamp_for_site(cls, week: int = None):
-        if week is not None:
-            raw = cls.start_semester + cls.step * (week - 1)
-        else:
-            raw = cls.start_semester + cls.step * (cls.compute_week() - 1)
-        return str(raw) + "000"
+        # Thanks oreluniver.ru
+        return str(cls.compute_timestamp(week)) + "000"
 
     @classmethod
     def compute_timestamp(cls, week: int = None):
-        if week is not None:
-            raw = cls.start_semester + cls.step * (week - 1)
-        else:
-            raw = cls.start_semester + cls.step * (cls.compute_week() - 1)
-        return raw
+        week_raw = week or cls.compute_week()
+        if datetime.utcnow().weekday() != 6:
+            week_raw -= 1
+        return cls.start_semester + cls.step * week_raw
 
     @classmethod
     def compute_day(cls, week: int, day: DayType):
@@ -50,9 +40,31 @@ class ScheduleTime:
         return datetime.fromtimestamp(timestamp + (day.value - 1) * 86400).strftime("%d.%m.%Y")
 
 
-def print_schedule(schedule, day: DayType, week: int = ScheduleTime.compute_week()):
-    header = days_ru[day] + f" ({ScheduleTime.compute_day(week, day)})"
-    if not schedule.get(day):
-        return tabulate([["Спи спокойно, \n в этот день нет пар"]], headers=[header], tablefmt="simple")
-    rows = [[subject] for subject in schedule[day]]
-    return tabulate(rows, headers=[header], tablefmt="simple")
+class print_schedule:
+    def __init__(self, schedule: t.List[ScheduleDayModel], day: DayType, week: int = ScheduleTime.compute_week()):
+        self.header = days_ru[day] + f" ({ScheduleTime.compute_day(week, day)})"
+        self.str_subjects: t.Dict[int, str] = dict()
+
+        for day_ in schedule:
+            if day_.day == day:
+                number = 1
+                for subject in day_.subjects:
+                    if number != subject.number:
+                        self.str_subjects[number] = "<b>Окно</b>"
+                        number +=1
+
+                    if self.str_subjects.get(subject.number) is not None:
+                        self.str_subjects[subject.number] += "\n <b>Подгруппа 1</b> \n"
+                        self.str_subjects[subject.number] += subject.__str__()
+                        self.str_subjects[subject.number] += "\n <b>Подгруппа 2</b> "
+                    else:
+                        self.str_subjects[subject.number] = subject.__str__()
+
+                    number += 1
+
+    def __str__(self):
+        if not self.str_subjects:
+            return tabulate([["Спи спокойно, \n в этот день нет пар"]], headers=[self.header], tablefmt="")
+        rows = [[subject + "\n\u200b\n"] for subject in self.str_subjects.values()]
+        table = tabulate(rows, headers=[self.header], tablefmt="simple")
+        return table

@@ -1,0 +1,64 @@
+from aiogram.dispatcher import FSMContext
+from aiogram import types
+
+from ScheduleOGU import Years, UserModel
+from ScheduleOGU.states import Register
+from ScheduleOGU.main import dp
+
+
+@dp.message_handler(commands=['start'])
+async def choose_group(message: types.Message):
+    faculties = await dp.bot.get_faculty_views()
+    buttons = [types.KeyboardButton(faculty.short_title) for faculty in faculties]
+    mk = types.ReplyKeyboardMarkup(keyboard=[buttons], resize_keyboard=True, one_time_keyboard=True)
+    await message.reply("Выбери факультет", reply_markup=mk)
+    await Register.faculty.set()
+
+
+@dp.message_handler(state=Register.faculty)
+async def answer_faculty(message: types.Message, state: FSMContext):
+    faculties = await dp.bot.get_faculty_views()
+    if message.text in [faculty.short_title for faculty in faculties]:
+        for faculty in faculties:
+            if faculty.short_title == message.text:
+                buttons = [types.KeyboardButton(value_.value) for name, value_ in Years._member_map_.items()]
+                mk = types.ReplyKeyboardMarkup(keyboard=[buttons], resize_keyboard=True, one_time_keyboard=True)
+                await message.reply("Выбери курс", reply_markup=mk)
+                await state.update_data(faculty=faculty)
+                await Register.course.set()
+    else:
+        await Register.faculty.set()
+
+
+@dp.message_handler(state=Register.course)
+async def answer_course(message: types.Message, state: FSMContext):
+    faculties = await dp.bot.get_faculty_views()
+    if message.text in [str(value_.value) for name, value_ in Years._member_map_.items()]:
+        data = await state.get_data()
+        faculty_ = data.get("faculty")
+        for faculty in faculties:
+            if faculty == faculty_:
+                buttons = [types.KeyboardButton(group.name) for group in faculty.groups]
+                mk = types.ReplyKeyboardMarkup(keyboard=[buttons], resize_keyboard=True, one_time_keyboard=True)
+                await state.update_data(course=message.text)
+                await message.answer("Выбери группу", reply_markup=mk)
+                await Register.group.set()
+
+    else:
+        await Register.course.set()
+
+
+@dp.message_handler(state=Register.group)
+async def answer_group(message: types.Message, state: FSMContext):
+    faculties = await dp.bot.get_faculty_views()
+    if message.text in [group.name for faculty in faculties for group in faculty.groups]:
+        for group in [group for faculty in faculties for group in faculty.groups]:
+            if group.name == message.text:
+                await UserModel.update_or_create(defaults={"id": message.from_user.id,
+                                                           "group_id": group.id},
+                                                 id=message.from_user.id)
+                await message.answer("Спасибо, что пользуетесь ботом.")
+                await state.finish()
+
+    else:
+        await Register.group.set()

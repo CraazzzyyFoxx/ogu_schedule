@@ -6,10 +6,9 @@ import aiohttp
 
 from urllib.parse import quote
 
-from ..enums import try_value, DayType
 from ...utils import ScheduleTime
 
-from .models import ScheduleEntryHTTP
+from .models import ScheduleEntryHTTP, StudentGroupHTTP, FacultyHTTP, ScheduleHTTP
 from .utils import flatten_error_dict, json_or_text
 from .erorrs import HTTPException
 
@@ -41,10 +40,14 @@ class HTTPClient:
         self.user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " \
                                "Chrome/96.0.4664.174 YaBrowser/22.1.5.810 Yowser/2.5 Safari/537.36"
 
-    async def static_login(self):
+    async def init(self):
         # Necessary to get aiohttp to stop complaining about session creation
         self.__session = aiohttp.ClientSession(loop=self.loop)
         _log.info('Session Started')
+
+    async def close(self) -> None:
+        if self.__session:
+            await self.__session.close()
 
     async def request(
             self,
@@ -100,22 +103,29 @@ class HTTPClient:
 
         raise RuntimeError('Unreachable code in HTTP handling')
 
-    async def get_schedule(self, group_id: int, week: int = None) -> t.Dict[DayType, t.List[ScheduleEntryHTTP]]:
+    async def get_schedule(self, group_id: int, week: int = None) -> ScheduleHTTP:
         timestamp = ScheduleTime.compute_timestamp_for_site(week)
         route = Route('GET', '/schedule//{group_id}///{timestamp}/printschedule', group_id=group_id,
                       timestamp=timestamp)
         data: dict = await self.request(route)
         data.pop("Authorization")
-        schedule = dict()
 
-        for subject in [ScheduleEntryHTTP.parse_obj(raw) for raw in data.values()]:
-            if subject.day_week not in schedule.keys():
-                schedule[try_value(DayType, subject.day_week)] = [subject]
-            else:
-                schedule[try_value(DayType, subject.day_week)].append(subject)
-        return schedule
+        return ScheduleHTTP(sorted([ScheduleEntryHTTP.parse_obj(raw) for raw in data.values()],
+                                   key=lambda x: (x.date, x.number)))
 
     async def get_employee(self, employee_id: int):
         route = Route('GET', '/employee/{employee_id}', employee_id=employee_id)
         data = await self.request(route)
         return data
+
+    async def get_groups(self, faculty_id: int, course: int) -> t.List[StudentGroupHTTP]:
+        route = Route('GET', '/schedule/{faculty_id}/{course}/grouplist',
+                      faculty_id=faculty_id,
+                      course=course)
+        data = await self.request(route)
+        return [StudentGroupHTTP.parse_obj(raw) for raw in data]
+
+    async def get_faculties(self) -> t.List[FacultyHTTP]:
+        route = Route('GET', '/schedule/divisionlistforstuds')
+        data = await self.request(route)
+        return [FacultyHTTP.parse_obj(raw) for raw in data]

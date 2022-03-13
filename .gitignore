@@ -13,3 +13,4 @@ db.db
 /.env
 /db.db-shm
 /db.db-wal
+test.py
