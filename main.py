@@ -8,7 +8,7 @@ from ScheduleOGU.utils.logging import CustomFormatter
 if __name__ == '__main__':
     logging.getLogger('aiogram')
     logging.getLogger("ScheduleOGU.core.http")
-    logging.getLogger("tortoise.db_client").setLevel(logging.DEBUG)
+    logging.getLogger("tortoise.db_client")
     handler = logging.StreamHandler()
     handler.setFormatter(CustomFormatter())
     logging.basicConfig(level=logging.INFO, handlers=[handler])

@@ -44,6 +44,8 @@ async def answer_course(message: types.Message, state: FSMContext):
         for faculty in faculties:
             if faculty == faculty_:
                 buttons = [types.KeyboardButton(group.name) for group in faculty.groups if group.course == int(message.text)]
+                if len(buttons) == 0:
+                    return await Register.course.set()
                 mk = types.ReplyKeyboardMarkup(keyboard=format_buttons(buttons, row_width=6),
                                                resize_keyboard=True,
                                                one_time_keyboard=True,
