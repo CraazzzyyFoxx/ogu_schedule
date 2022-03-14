@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import typing as t
 
@@ -27,7 +28,7 @@ class Client(Bot):
         _log.info("Starting...")
         await self.http.init()
         await self.connect_db()
-        # await self.fetch_groups()
+        await self.fetch_groups()
         _log.info("Started.")
 
     async def on_shutdown(self, dispatcher):
@@ -47,7 +48,7 @@ class Client(Bot):
     async def get_schedule_for_user(self, message):
         user = await UserModel.filter(id=message.from_user.id).first()
 
-        if user is None:
+        if not user:
             await message.reply("Используйте команду /start.")
         return await self.get_schedule(user.group_id)
 
@@ -102,7 +103,7 @@ class Client(Bot):
         await FacultyModel.all().delete()
         await GroupModel.all().delete()
 
-        for faculty in faculties:
+        async def worker(faculty):
             faculty_ = await FacultyModel.create(**{"id": faculty.id,
                                                     "title": faculty.title,
                                                     "short_title": faculty.short_title})
@@ -112,15 +113,21 @@ class Client(Bot):
                 groups = await self.http.get_groups(faculty.id, course.value)
                 if len(groups) == 0:
                     continue
+                group_models = []
                 for group in groups:
-                    await GroupModel.create(**{"id": group.id,
-                                               "course": course,
-                                               "direction": group.direction,
-                                               "level": group.level.value,
-                                               "name": group.name,
-                                               "faculty_id": faculty_.id})
+                    group_models.append(GroupModel(**{"id": group.id,
+                                                      "course": course,
+                                                      "direction": group.direction,
+                                                      "level": group.level.value,
+                                                      "name": group.name,
+                                                      "faculty_id": faculty_.id}))
                     groups_data[faculty].append(group)
 
+                await GroupModel.bulk_create(group_models, ignore_conflicts=True)
+
+        loop = asyncio.get_event_loop()
+        tasks = [loop.create_task(worker(faculty)) for faculty in faculties]
+        await asyncio.wait(tasks)
         return groups_data
 
     async def get_faculty_views(self):

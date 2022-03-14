@@ -64,8 +64,7 @@ async def answer_group(message: types.Message, state: FSMContext):
     if message.text in [group.name for faculty in faculties for group in faculty.groups]:
         for group in [group for faculty in faculties for group in faculty.groups]:
             if group.name == message.text:
-                await UserModel.update_or_create(defaults={"id": message.from_user.id,
-                                                           "group_id": group.id},
+                await UserModel.update_or_create(defaults={"group_id": group.id},
                                                  id=message.from_user.id)
                 await message.answer("Спасибо, что пользуетесь ботом.")
                 await state.finish()

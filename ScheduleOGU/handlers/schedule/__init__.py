@@ -8,7 +8,7 @@ from main import dp
 
 @dp.message_handler(commands={'monday', 'Monday', 'понедельник', 'Понедельник'})
 async def monday(message: types.Message):
-    await message.reply(print_schedule(await dp.bot.get_schedule_for_user(message), DayType.Monday).__str__(),
+    await message.reply(print_schedule((await dp.bot.get_schedule_for_user(message)), DayType.Monday).__str__(),
                         parse_mode=types.ParseMode.HTML,
                         disable_web_page_preview=True)
 
