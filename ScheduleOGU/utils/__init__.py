@@ -65,7 +65,7 @@ class print_schedule:
 
     def __str__(self):
         if not self.str_subjects:
-            return tabulate([["Спи спокойно, \n в этот день нет пар"]], headers=[self.header], tablefmt="")
+            return tabulate([["Спи спокойно, \n в этот день нет пар"]], headers=[self.header], tablefmt="simple")
         rows = [[subject + "\n\u200b\n"] for subject in self.str_subjects.values()]
         table = tabulate(rows, headers=[self.header], tablefmt="simple")
         return table
