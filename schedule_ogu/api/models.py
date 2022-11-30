@@ -3,7 +3,13 @@ from datetime import datetime
 
 from pydantic import Field, BaseModel, validator
 
-from schedule_ogu.utils.enums import try_value, DayType, EducationalLevel, educational_level_ru, SubjectType, subject_type_ru
+from schedule_ogu.utils.enums import (try_value,
+                                      DayType,
+                                      EducationalLevel,
+                                      educational_level_ru,
+                                      SubjectType,
+                                      subject_type_ru,
+                                      )
 
 
 __all__: typing.Sequence[str] = ("ScheduleEntryHTTP",
@@ -13,6 +19,7 @@ __all__: typing.Sequence[str] = ("ScheduleEntryHTTP",
                                  "FacultyHTTP",
                                  "EmployeeHTTP",
                                  "DepartmentHTTP",
+                                 "ExamHTTP"
                                  )
 
 
