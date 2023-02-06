@@ -1,80 +1,74 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.callback_data import CallbackData
+from aiogram.types import InlineKeyboardMarkup
+from aiogram.filters.callback_data import CallbackData
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from schedule_ogu import FacultyModel, DepartmentModel, GroupModel, UserType, Years, EmployeeModel, format_buttons
+from schedule_ogu.models.db import FacultyModel, DepartmentModel, GroupModel, EmployeeModel
+from schedule_ogu.models.enums import Years, UserType
 
 start_completed = """
-✅Группа выбрана, можешь пользоваться расписанием
+✅Регистрация завершена, можешь пользоваться расписанием
 ⚙️Команды бота
 /start - перезапустить бота (изменить группу)
 /today - расписание на сегодня
 /next - расписание на завтра
-/select - выбрать дату
 """
 
-cb_user_start = CallbackData("user", "property", "value")
 
-start_kb_choose_user_type = InlineKeyboardMarkup(row_width=2)
-inline_user_type_student = InlineKeyboardButton('Студент',
-                                                callback_data=cb_user_start.new(property="user_type",
-                                                                                value=UserType.Student.value))
-inline_user_type_lecturer = InlineKeyboardButton('Преподаватель ',
-                                                 callback_data=cb_user_start.new(property="user_type",
-                                                                                 value=UserType.Lecturer.value))
-start_kb_choose_user_type.add(inline_user_type_student, inline_user_type_lecturer)
+class UserStartCallback(CallbackData, prefix="start"):
+    action: str
+    value: int | None
 
-course_buttons = (
-    InlineKeyboardButton(f"{Years.First}", callback_data=cb_user_start.new(property="course",
-                                                                           value=Years.First.value)),
-    InlineKeyboardButton(f"{Years.Second}", callback_data=cb_user_start.new(property="course",
-                                                                            value=Years.Second.value)),
-    InlineKeyboardButton(f"{Years.Third}", callback_data=cb_user_start.new(property="course",
-                                                                           value=Years.Third.value)),
-    InlineKeyboardButton(f"{Years.Fourth}", callback_data=cb_user_start.new(property="course",
-                                                                            value=Years.Fourth.value)),
-    InlineKeyboardButton(f"{Years.Fifth}", callback_data=cb_user_start.new(property="course",
-                                                                           value=Years.Fifth.value)))
+
+def start_kb_choose_user_type() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text='Студент', callback_data=UserStartCallback(action="user_type", value=UserType.Student))
+    builder.button(text='Преподаватель ', callback_data=UserStartCallback(action="user_type", value=UserType.Lecturer))
+    return builder.as_markup()
 
 
 async def start_kb_choose_faculty() -> InlineKeyboardMarkup:
     faculties = await FacultyModel.all()
-    buttons = [InlineKeyboardButton(faculty.short_title,
-                                    callback_data=cb_user_start.new(property="faculty", value=faculty.id))
-               for faculty in faculties]
+    builder = InlineKeyboardBuilder()
 
-    return InlineKeyboardMarkup(inline_keyboard=format_buttons(buttons, row_width=3), row_width=5)
+    for faculty in faculties:
+        builder.button(text=faculty.short_title, callback_data=UserStartCallback(action="faculty", value=faculty.id))
+    builder.adjust(5)
+    return builder.as_markup()
 
 
-async def start_kb_choose_course() -> InlineKeyboardMarkup:
-    kb = InlineKeyboardMarkup(row_width=5)
-    kb.row(*course_buttons)
-    return kb
+def start_kb_choose_course() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for year in Years:
+        builder.button(text=f"{year}", callback_data=UserStartCallback(action="course", value=year))
+    return builder.as_markup()
 
 
 async def start_kb_choose_department(faculty_id: int) -> InlineKeyboardMarkup:
     departments = await DepartmentModel.filter(faculty_id=faculty_id)
-    buttons = [InlineKeyboardButton(department.short_title,
-                                    callback_data=cb_user_start.new(property="department",
-                                                                    value=department.id))
-               for department in departments]
-
-    return InlineKeyboardMarkup(inline_keyboard=format_buttons(buttons, row_width=3), row_width=5)
+    builder = InlineKeyboardBuilder()
+    for department in departments:
+        builder.button(text=department.short_title, callback_data=UserStartCallback(action="department",
+                                                                                    value=department.id))
+    builder.adjust(5)
+    return builder.as_markup()
 
 
 async def start_kb_choose_group(faculty_id: int, course: int) -> InlineKeyboardMarkup:
     groups = await GroupModel.filter(faculty_id=faculty_id, course=course)
-    buttons = [InlineKeyboardButton(group.name,
-                                    callback_data=cb_user_start.new(property="group", value=group.id))
-               for group in groups
-               ]
+    builder = InlineKeyboardBuilder()
+    for group in groups:
+        builder.button(text=group.name, callback_data=UserStartCallback(action="group", value=group.id))
 
-    return InlineKeyboardMarkup(inline_keyboard=format_buttons(buttons, row_width=3), row_width=5)
+    builder.adjust(5)
+    return builder.as_markup()
 
 
 async def start_kb_choose_employee(department_id: int) -> InlineKeyboardMarkup:
     employees = await EmployeeModel.filter(department_id=department_id)
-    buttons = [InlineKeyboardButton(employee.short_full_name,
-                                    callback_data=cb_user_start.new(property="employee", value=employee.id))
-               for employee in employees]
+    builder = InlineKeyboardBuilder()
+    for employee in employees:
+        builder.button(text=employee.short_full_name, callback_data=UserStartCallback(action="employee",
+                                                                                      value=employee.id))
 
-    return InlineKeyboardMarkup(inline_keyboard=format_buttons(buttons, row_width=3), row_width=5)
+    builder.adjust(5)
+    return builder.as_markup()

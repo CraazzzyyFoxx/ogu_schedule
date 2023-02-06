@@ -2,7 +2,8 @@ import typing
 
 from aiogram.utils.markdown import hbold, hlink
 
-from schedule_ogu import ScheduleSubjectModel, EmployeeModel, SubjectType, DayType, ExamModel, UserModel, UserType
+from schedule_ogu.models.db import ScheduleSubjectModel, EmployeeModel, ExamModel, UserModel, ScheduleModel
+from schedule_ogu.models.enums import SubjectType, DayType, UserType
 
 
 class RendererSchedule:
@@ -137,21 +138,27 @@ class RendererSchedule:
     @classmethod
     def render_day(cls,
                    user: UserModel,
-                   schedule: typing.List[ScheduleSubjectModel],
+                   schedule: dict[DayType, ScheduleModel],
+                   day: DayType
                    ) -> str:
-        schedule = sorted(schedule, key=lambda x: (x.day, x.number, x.sub_group))
-        day = schedule[0].day
+        sch = schedule.get(day)
 
-        header = f"Расписание на <u>{cls.days_ru[day]}</u>: {schedule[0].str_date} \n\n"
+        header = f"Расписание на <u>{cls.days_ru[sch.day]}</u>: {sch.str_date} \n\n"
+
+        if not sch.subjects:
+            header += hbold("Спи спокойно сегодня нет пар")
+            return header
+
+        subjects = sorted(sch.subjects, key=lambda x: (x.number, x.sub_group))
 
         str_subjects: typing.List[str] = []
-        prepared_schedule: typing.Dict[int, typing.List[ScheduleSubjectModel]] = {1: []}
+        prepared_schedule: dict[int, list[ScheduleSubjectModel]] = {}
 
-        for index in range(schedule[0].number, schedule[-1].number + 1):
+        for index in range(1, max(subject.number for subject in subjects) + 1):
             prepared_schedule[index] = []
 
-        for index in range(len(schedule)):
-            prepared_schedule[schedule[index].number].append(schedule[index])
+        for subject in subjects:
+            prepared_schedule[subject.number].append(subject)
 
         for number, items in prepared_schedule.items():
             if not items:
@@ -160,7 +167,7 @@ class RendererSchedule:
                 str_subjects.append(cls.render_subject(user, items[0]))
             else:
                 str_subjects.append(cls.render_subject_with_sub_groups(user, items))
-
+        ...
         return header + "\n\n".join(str_subjects)
 
     @classmethod
@@ -178,3 +185,16 @@ class RendererSchedule:
             str_subjects.append(cls.render_exam(user, exam))
 
         return header + "\n\n".join(str_subjects)
+
+
+def format_buttons(buttons, row_width=3):
+    keyboard = []
+    row = []
+    for index, button in enumerate(buttons, start=1):
+        row.append(button)
+        if index % row_width == 0:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+    return keyboard

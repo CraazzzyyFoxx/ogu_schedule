@@ -3,13 +3,13 @@ from datetime import datetime
 
 from pydantic import Field, BaseModel, validator
 
-from schedule_ogu.utils.enums import (try_value,
-                                      DayType,
-                                      EducationalLevel,
-                                      educational_level_ru,
-                                      SubjectType,
-                                      subject_type_ru,
-                                      )
+from schedule_ogu.models.enums import (try_value,
+                                       DayType,
+                                       EducationalLevel,
+                                       educational_level_ru,
+                                       SubjectType,
+                                       subject_type_ru,
+                                       )
 
 
 __all__: typing.Sequence[str] = ("ScheduleEntryHTTP",
@@ -24,11 +24,15 @@ __all__: typing.Sequence[str] = ("ScheduleEntryHTTP",
 
 
 class ScheduleEntryHTTP(BaseModel):
+    id: str = Field(alias="id_cell")
     name: str = Field(alias="TitleSubject")
     type: SubjectType = Field(alias="TypeLesson")
+    subject_id: int = Field(alias="idSubject")
+    title: str = Field(alias="title")
+    department_name: str = Field(alias="special")
 
     date: int = Field(alias="DateLesson")
-    day: int = Field(alias="DayWeek")
+    day: DayType = Field(alias="DayWeek")
 
     sub_group: int = Field(alias="NumberSubGruop")
     building: str = Field(alias='Korpus')
@@ -65,7 +69,7 @@ class ExamHTTP(BaseModel):
     type: SubjectType = Field(alias="TypeLesson")
 
     date: int = Field(alias="DateLesson")
-    day: int = Field(alias="DayWeek")
+    day: DayType = Field(alias="DayWeek")
 
     sub_group: int = Field(alias="NumberSubGruop")
     dislocation: str = Field(alias="NumberRoom")
@@ -93,24 +97,18 @@ class ExamHTTP(BaseModel):
 
 
 class ScheduleDayHTTP:
-    def __init__(self, day: DayType, entries: typing.List[ScheduleEntryHTTP]):
+    def __init__(self, date: int,  day: DayType, entries: typing.List[ScheduleEntryHTTP]):
         self.day = day
-        self.date = entries[0].date
-        self.subjects = list()
-        self.subjects.extend(entries)
+        self.date = date + 86400 * day
+        self.subjects: typing.List[ScheduleEntryHTTP] = entries
 
 
 class ScheduleHTTP:
-    def __init__(self, entries: typing.List[ScheduleEntryHTTP]):
-        self.group_id = entries[0].group_id
-        self.days = dict()
+    def __init__(self, date: int, entries: typing.List[ScheduleEntryHTTP]):
+        self.days: dict[DayType, ScheduleDayHTTP] = {day: ScheduleDayHTTP(date, day, []) for day in DayType}
 
         for entry in entries:
-            day = try_value(DayType, entry.day)
-            if day not in self.days.keys():
-                self.days[day] = ScheduleDayHTTP(day, [entry])
-            else:
-                self.days[day].subjects.append(entry)
+            self.days[entry.day].subjects.append(entry)
 
 
 class StudentGroupHTTP(BaseModel):

@@ -1,6 +1,18 @@
 import enum
 
 
+__all__ = ("UserType",
+           "DayType",
+           "EducationalLevel",
+           "Years",
+           "ActionStats",
+           "SubjectType",
+           "subject_type_ru",
+           "educational_level_ru",
+           "try_value",
+           )
+
+
 class UserType(enum.IntEnum):
     Student = 0
     Lecturer = 1
@@ -32,14 +44,14 @@ class Years(enum.IntEnum):
 
 
 class ActionStats(enum.IntEnum):
-    update_faculties = 0
-    update_departments = 1
-    update_employees = 2
-    update_groups = 3
-    update_schedule = 4
-    update_employee = 5
-    update_data = 6
-    update_exams = 7
+    fetch_faculties = 0
+    fetch_departments = 1
+    fetch_employees = 2
+    fetch_groups = 3
+    fetch_schedule = 4
+    fetch_employee = 5
+    fetch_data = 6
+    fetch_exams = 7
 
 
 class SubjectType(enum.IntEnum):

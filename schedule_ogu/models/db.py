@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import datetime
 import typing
 
 from tortoise import fields
 from tortoise.models import Model
 
-from schedule_ogu.utils.enums import DayType, EducationalLevel, Years, SubjectType, ActionStats, UserType
+from schedule_ogu.models.enums import DayType, EducationalLevel, Years, SubjectType, ActionStats, UserType
 
 __all__: typing.Sequence[str] = (
+    "ScheduleModel",
     "ScheduleSubjectModel",
     "EmployeeModel",
     "FacultyModel",
@@ -23,7 +26,8 @@ class StatsModel(Model):
     id = fields.IntField(pk=True)
     action = fields.IntEnumField(ActionStats)
     datetime = fields.DatetimeField(auto_now_add=True)
-    extra = fields.TextField(null=True)
+    object_id = fields.BigIntField(null=True)
+    extra = fields.JSONField(default="{}")
 
     class Meta:
         """Metaclass to set table name and description"""
@@ -127,7 +131,7 @@ class EmployeeModel(Model):
     second_name = fields.TextField()
     middle_name = fields.TextField()
 
-    subjects: fields.ReverseRelation['ScheduleSubjectModel']
+    schedule: fields.ReverseRelation['ScheduleModel']
     exams: fields.ReverseRelation['ExamModel']
     department: fields.ForeignKeyRelation["DepartmentModel"] = fields.ForeignKeyField(model_name='main.DepartmentModel',
                                                                                       related_name='employees',
@@ -148,10 +152,27 @@ class EmployeeModel(Model):
         return f"https://oreluniver.ru/employee/{self.id}"
 
 
-class ScheduleSubjectModel(Model):
+class ScheduleModel(Model):
     id = fields.IntField(pk=True)
     day = fields.IntEnumField(DayType)
     date = fields.IntField()
+
+    subjects: fields.ForeignKeyRelation[ScheduleSubjectModel]
+
+    class Meta:
+        """Metaclass to set table name and description"""
+
+        table = "schedule"
+        table_description = "Stores information about the schedule"
+        unique_together = ("day", "date")
+
+    @property
+    def str_date(self):
+        return datetime.datetime.fromtimestamp(self.date).strftime("%d.%m.%Y")  # type: ignore
+
+
+class ScheduleSubjectModel(Model):
+    id = fields.IntField(pk=True)
 
     name = fields.TextField()
     sub_group = fields.IntField()
@@ -162,6 +183,10 @@ class ScheduleSubjectModel(Model):
 
     zoom_link = fields.TextField(null=True)
     zoom_password = fields.TextField(null=True)
+
+    schedule: fields.ForeignKeyRelation[ScheduleModel] = fields.ForeignKeyField(model_name="main.ScheduleModel",
+                                                                                related_name='subjects',
+                                                                                to_field='id')
 
     employee: fields.ForeignKeyRelation[EmployeeModel] = fields.ForeignKeyField(model_name='main.EmployeeModel',
                                                                                 related_name='subjects',
@@ -174,10 +199,7 @@ class ScheduleSubjectModel(Model):
 
         table = "subject"
         table_description = "Stores information about the subject"
-
-    @property
-    def str_date(self):
-        return datetime.datetime.fromtimestamp(self.date).strftime("%d.%m.%Y")  # type: ignore
+        unique_together = (("schedule_id", "employee_id", "number"), ("schedule_id", "group_id", "number"))
 
 
 class ExamModel(Model):
@@ -204,7 +226,7 @@ class ExamModel(Model):
     class Meta:
         """Metaclass to set table name and description"""
 
-        table = "exams"
+        table = "exam"
         table_description = "Stores information about the exam"
 
     @property
