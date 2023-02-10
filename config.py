@@ -42,7 +42,7 @@ UPDATE_FETCH_DATA = datetime.timedelta(days=180)
 
 # Constants for calculating time
 START_SEMESTER = int(datetime.datetime(2022, 8, 29).timestamp())
-BASE_WEEK_DELTA = 1
+BASE_WEEK_DELTA = 0
 
 
 # Interface constants

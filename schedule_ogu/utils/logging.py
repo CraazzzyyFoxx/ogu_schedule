@@ -33,3 +33,4 @@ class InterceptHandler(logging.Handler):
 
 def setup():
     logging.basicConfig(handlers=[InterceptHandler()], level=logging.DEBUG)
+    logger.add("logs/airy.log", rotation="10 MB", compression="zip")

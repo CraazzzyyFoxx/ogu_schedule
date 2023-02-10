@@ -24,11 +24,11 @@ from schedule_ogu.models.db import (ScheduleModel,
                                     ExamModel
                                     )
 
-fetch_schedule_ratelimiter = RateLimiter(7200, 5, bucket=BucketType.USER, wait=False)
-fetch_exams_ratelimiter = RateLimiter(7200, 5, bucket=BucketType.USER, wait=False)
+fetch_schedule_ratelimiter = RateLimiter(7200, 1, bucket=BucketType.USER, wait=False)
+fetch_exams_ratelimiter = RateLimiter(7200, 1, bucket=BucketType.USER, wait=False)
 
-fetch_global_schedule_ratelimiter = RateLimiter(7200, 30, bucket=BucketType.GLOBAL, wait=False)
-fetch_global_exams_ratelimiter = RateLimiter(7200, 30, bucket=BucketType.GLOBAL, wait=False)
+fetch_global_schedule_ratelimiter = RateLimiter(7200, 3, bucket=BucketType.GLOBAL, wait=False)
+fetch_global_exams_ratelimiter = RateLimiter(7200, 3, bucket=BucketType.GLOBAL, wait=False)
 
 
 class ScheduleService:

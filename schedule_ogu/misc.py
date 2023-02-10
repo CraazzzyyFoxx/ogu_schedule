@@ -72,19 +72,18 @@ async def setup():
     dp.include_router(start.router)
     dp.include_router(schedule.router)
 
+    if not bot_config.has_display:
+        DisplayManager.run_display()
+
     await Tortoise.init(config=tortoise_config)
     await Tortoise.generate_schemas()
 
-    await db.setup(bot)
     await ScheduleService.setup(bot)
 
     # join_list.setup(runner)
     # apscheduller.setup(runner)
     # healthcheck.setup(runner)
     # runner.on_startup(on_startup_webhook, webhook=True, polling=False)
-
-    if not bot_config.has_display:
-        DisplayManager.run_display()
 
     if bot_config.superuser_startup_notifier:
         await on_startup_notify(bot)
