@@ -10,3 +10,4 @@ cashews >=5.0.0
 git+https://github.com/aiogram/aiogram.git@dev-3.x-api-6.5
 tortoise-orm
 selenium
+PyVirtualDisplay
