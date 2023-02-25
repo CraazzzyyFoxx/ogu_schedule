@@ -1,6 +1,5 @@
 import asyncio
 from contextlib import suppress
-from pathlib import Path
 
 from aiogram import Bot, Dispatcher
 from aiogram.exceptions import TelegramAPIError
@@ -12,10 +11,6 @@ from config import bot_config, tortoise_config
 from schedule_ogu.models.db import UserModel
 from schedule_ogu.routers import start, schedule
 from schedule_ogu.services.schedule import ScheduleService
-from schedule_ogu.utils import db
-
-
-# from aiogram_bot.middlewares.i18n import I18nMiddleware
 
 
 class DisplayManager:
@@ -47,25 +42,10 @@ async def on_startup_notify(bot: Bot):
         await asyncio.sleep(0.2)
 
 
-# i18n = I18nMiddleware("bot", locales_dir, default="en")
-
-# if config.SENTRY_URL:
-#     logger.info("Setup Sentry SDK")
-#     sentry_sdk.init(
-#         config.SENTRY_URL,
-#         traces_sample_rate=1.0,
-#     )
-
-
 async def setup():
-    app_dir: Path = Path(__file__).parent.parent
-    locales_dir = app_dir / "locales"
-
     bot = Bot(bot_config.token, parse_mode="HTML")
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
-
-    # await middlewares.setup(dp)
 
     logger.info("Configure routers...")
 
@@ -79,11 +59,6 @@ async def setup():
     await Tortoise.generate_schemas()
 
     await ScheduleService.setup(bot)
-
-    # join_list.setup(runner)
-    # apscheduller.setup(runner)
-    # healthcheck.setup(runner)
-    # runner.on_startup(on_startup_webhook, webhook=True, polling=False)
 
     if bot_config.superuser_startup_notifier:
         await on_startup_notify(bot)

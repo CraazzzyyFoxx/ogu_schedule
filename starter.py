@@ -4,7 +4,7 @@ import os
 from schedule_ogu.utils.cli import cli
 
 
-if os.name != "nt":  # Lol imagine using Windows
+if os.name != "nt":
     try:
         import uvloop
     except ImportError:

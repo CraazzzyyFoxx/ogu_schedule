@@ -167,7 +167,7 @@ class RendererSchedule:
                 str_subjects.append(cls.render_subject(user, items[0]))
             else:
                 str_subjects.append(cls.render_subject_with_sub_groups(user, items))
-        ...
+
         return header + "\n\n".join(str_subjects)
 
     @classmethod
