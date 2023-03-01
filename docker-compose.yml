@@ -1,10 +1,11 @@
 version: "3.9"
 services:
   ogu-db:
+    container_name: ogu_db
     image: postgres:latest
     restart: always
-    expose:
-      - $POSTGRES_PORT:-5432
+    ports:
+      - "${POSTGRES_PORT:-5432:5432}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-airy}
@@ -15,6 +16,7 @@ services:
       - ./db_scripts:/docker-entrypoint-initdb.d
       - .:/var/lib/postgresql/data
   ogu:
+    container_name: ogu_bot
     build:
         context: .
         dockerfile: Dockerfile
