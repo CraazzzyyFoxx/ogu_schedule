@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  ogu-db:
+    image: postgres:latest
+    restart: always
+    expose:
+      - $POSTGRES_PORT:-5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-airy}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?err}
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ./db_scripts:/docker-entrypoint-initdb.d
+      - .:/var/lib/postgresql/data
+  ogu:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    command: ["python3.11", "-O", "starter.py", "polling"]
+    depends_on:
+      - ogu-db
+    restart: always
