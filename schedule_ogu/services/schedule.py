@@ -186,10 +186,8 @@ class ScheduleService:
     ) -> dict[DayType, ScheduleModel]:
         if user.type == UserType.Student:
             schedule = await cls.http.get_schedule_student(user.group_id, week_delta=week_delta)
-            user_index = ("schedule_id", "group_id", "number")
         else:
             schedule = await cls.http.get_schedule_employee(user.employee_id, week_delta=week_delta)
-            user_index = ("schedule_id", "employee_id", "number")
         if not schedule:
             return {}
 
@@ -229,7 +227,7 @@ class ScheduleService:
 
                     subjects.append(s_m)
 
-                await ScheduleSubjectModel.bulk_create(subjects, on_conflict=user_index,
+                await ScheduleSubjectModel.bulk_create(subjects, on_conflict=("schedule_id", "employee_id", "number"),
                                                        update_fields=("name",
                                                                       "sub_group",
                                                                       "audience",
