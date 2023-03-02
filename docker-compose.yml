@@ -58,5 +58,7 @@ services:
     depends_on:
       - ogu-db
     restart: unless-stopped
-    networks:
-      - postgres
+
+networks:
+  postgres:
+    driver: bridge
