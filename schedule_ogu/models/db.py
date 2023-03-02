@@ -50,6 +50,10 @@ class UserModel(Model):
         table = "user"
         table_description = "Stores information about the user"
 
+    @property
+    def object_id(self):
+        return self.employee_id if self.type == UserType.Lecturer else self.group_id
+
 
 class CookieModel(Model):
     id = fields.BigIntField(pk=True)

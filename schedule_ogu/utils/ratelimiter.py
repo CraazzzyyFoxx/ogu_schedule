@@ -51,7 +51,7 @@ class RateLimiter:
 
         keys = {
             BucketType.GLOBAL: 0,
-            BucketType.USER: (ctx.id, ctx.type)
+            BucketType.USER: (ctx.id, ctx.type, ctx.object_id)
         }
 
         return keys[self.bucket]

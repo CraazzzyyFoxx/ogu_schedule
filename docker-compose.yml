@@ -3,18 +3,52 @@ services:
   ogu-db:
     container_name: ogu_db
     image: postgres:latest
-    restart: always
+    restart: unless-stopped
     ports:
       - "${POSTGRES_PORT:-5432:5432}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-airy}
+      POSTGRES_DB: ${POSTGRES_DB:-ogu}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?err}
       PGDATA: "/var/lib/postgresql/data/pgdata"
     volumes:
       - ./db_scripts:/docker-entrypoint-initdb.d
       - .:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U habrpguser -d habrdb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512MB
+    networks:
+      - postgres
+
+  pgadmin:
+    container_name: pgadmin_ogu
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_USER:-admin}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.125'
+          memory: 128MB
+    networks:
+      - postgres
+
   ogu:
     container_name: ogu_bot
     build:
@@ -23,4 +57,4 @@ services:
     command: ["python3.11", "-O", "starter.py", "polling"]
     depends_on:
       - ogu-db
-    restart: always
+    restart: unless-stopped
