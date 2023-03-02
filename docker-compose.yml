@@ -16,7 +16,7 @@ services:
       - ./db_scripts:/docker-entrypoint-initdb.d
       - .:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U habrpguser -d habrdb" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ogu}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,28 +26,6 @@ services:
         limits:
           cpus: '0.5'
           memory: 512MB
-    networks:
-      - postgres
-
-  pgadmin:
-    container_name: pgadmin_ogu
-    image: dpage/pgadmin4:latest
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_USER:-admin}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-    volumes:
-      - ./pgadmin:/var/lib/pgadmin
-    ports:
-      - "5050:80"
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '0.125'
-          memory: 128MB
-    networks:
-      - postgres
 
   ogu:
     container_name: ogu_bot
@@ -58,9 +36,4 @@ services:
     depends_on:
       - ogu-db
     restart: unless-stopped
-    networks:
-      - postgres
 
-networks:
-  postgres:
-    driver: bridge
